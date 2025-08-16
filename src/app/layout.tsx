@@ -1,26 +1,31 @@
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import { cn } from "@/lib/utils"
-import "./globals.css"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { cn } from "@/lib/utils";
+import "./globals.css";
+import QueryProviders from "@/components/query-provider";
+import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Jira clone",
   description: "Jira clone",
   icons: "/img/logo.png",
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
       <body className={cn(inter.className, "antialiased min-h-screen")}>
-        {children}
+        <QueryProviders>
+          {children}
+          <Toaster closeButton position="bottom-center" />
+        </QueryProviders>
       </body>
     </html>
-  )
+  );
 }
