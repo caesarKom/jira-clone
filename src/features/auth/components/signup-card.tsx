@@ -1,6 +1,5 @@
 "use client";
 
-import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { FcGoogle } from "react-icons/fc";
@@ -24,18 +23,14 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-
-const formSchema = z.object({
-  name: z.string().min(6, "Minimum of 6 characters"),
-  email: z.email(),
-  password: z.string().min(6, "Minimum of 6 characters"),
-});
-
-type FormType = z.infer<typeof formSchema>;
+import { registerSchema, RegisterType } from "../schemas";
+import { useRegister } from "../api/use-register";
 
 export const SignupCard = () => {
-  const form = useForm<FormType>({
-    resolver: zodResolver(formSchema),
+  const { mutate } = useRegister();
+
+  const form = useForm<RegisterType>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -43,8 +38,8 @@ export const SignupCard = () => {
     },
   });
 
-  const onSubmit = (values: FormType) => {
-    console.log({ values });
+  const onSubmit = (values: RegisterType) => {
+    mutate({ json: values });
   };
 
   return (
@@ -118,7 +113,7 @@ export const SignupCard = () => {
                 </FormItem>
               )}
             />
-            <Button disabled={false} size="lg" className="w-full">
+            <Button type="submit" disabled={false} size="lg" className="w-full">
               Sign Up
             </Button>
           </form>

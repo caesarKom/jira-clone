@@ -1,6 +1,5 @@
 "use client";
 
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
@@ -23,25 +22,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-
-const formSchema = z.object({
-  email: z.email(),
-  password: z.string(),
-});
-
-type FormType = z.infer<typeof formSchema>;
+import { loginSchema, LoginType } from "../schemas";
+import { useLogin } from "../api/use-login";
 
 export const SigninCard = () => {
-  const form = useForm<FormType>({
-    resolver: zodResolver(formSchema),
+  const { mutate } = useLogin();
+
+  const form = useForm<LoginType>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const onSubmit = (values: FormType) => {
-    console.log(values);
+  const onSubmit = (values: LoginType) => {
+    mutate({ json: values });
   };
 
   return (
@@ -90,7 +86,7 @@ export const SigninCard = () => {
               )}
             />
 
-            <Button disabled={false} size="lg" className="w-full">
+            <Button type="submit" disabled={false} size="lg" className="w-full">
               Login
             </Button>
           </form>
