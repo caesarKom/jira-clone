@@ -82,10 +82,11 @@ model Verification {
 }
 
 model Workspaces {
-  id       String  @id @default(uuid())
-  name     String
-  imageUrl String?
-  userId   String
+  id         String  @id @default(uuid())
+  name       String
+  imageUrl   String?
+  userId     String
+  inviteCode String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
