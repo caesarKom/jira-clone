@@ -1,11 +1,14 @@
-import { getCurrent } from "@/features/auth/actions";
 import { SignupCard } from "@/features/auth/components/signup-card";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function SignUpPage() {
-  const user = await getCurrent();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (user) redirect("/");
+  if (session) redirect("/");
 
   return <SignupCard />;
 }

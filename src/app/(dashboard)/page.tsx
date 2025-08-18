@@ -1,11 +1,14 @@
-import { getCurrent } from "@/features/auth/actions";
 import { CreateWorkspaceForm } from "@/features/workspaces/components/create-workspace-form";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const user = await getCurrent();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (!user) redirect("/sign-in");
+  if (!session) redirect("/sign-in");
 
   return (
     <div className="">

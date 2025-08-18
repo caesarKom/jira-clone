@@ -23,10 +23,12 @@ import {
 } from "@/components/ui/form";
 import Link from "next/link";
 import { loginSchema, LoginType } from "../schemas";
-import { useLogin } from "../api/use-login";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export const SigninCard = () => {
-  const { mutate, isPending } = useLogin();
+  const router = useRouter();
 
   const form = useForm<LoginType>({
     resolver: zodResolver(loginSchema),
@@ -36,8 +38,23 @@ export const SigninCard = () => {
     },
   });
 
-  const onSubmit = (values: LoginType) => {
-    mutate({ json: values });
+  const onSubmit = async (values: LoginType) => {
+    await authClient.signIn.email(
+      {
+        email: values.email,
+        password: values.password,
+        callbackURL: "/",
+      },
+      {
+        onSuccess: () => {
+          toast.success("Welcome back!");
+          router.push("/");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      }
+    );
   };
 
   return (
@@ -86,12 +103,7 @@ export const SigninCard = () => {
               )}
             />
 
-            <Button
-              type="submit"
-              disabled={isPending}
-              size="lg"
-              className="w-full"
-            >
+            <Button type="submit" size="lg" className="w-full">
               Login
             </Button>
           </form>
@@ -101,21 +113,11 @@ export const SigninCard = () => {
         <DottedSeparator />
       </div>
       <CardFooter className="p-7 flex flex-col gap-y-4">
-        <Button
-          disabled={isPending}
-          variant="secondary"
-          size="lg"
-          className="w-full"
-        >
+        <Button variant="secondary" size="lg" className="w-full">
           <FcGoogle className="mr-2 size-5" />
           Login with Google
         </Button>
-        <Button
-          disabled={isPending}
-          variant="secondary"
-          size="lg"
-          className="w-full"
-        >
+        <Button variant="secondary" size="lg" className="w-full">
           <FaGithub className="mr-2 size-5" />
           Login with Github
         </Button>

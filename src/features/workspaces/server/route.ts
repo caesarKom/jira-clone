@@ -1,26 +1,44 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { createWorkspaceSchema } from "../schemas";
-import { sessionMiddleware } from "@/lib/session-middleware";
-import { DATABASE_ID, WORKSPACES_ID } from "@/config";
-import { ID } from "node-appwrite";
+import { createWriteStream } from "fs";
+import path from "path";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 
 const app = new Hono().post(
   "/",
-  zValidator("json", createWorkspaceSchema),
-  sessionMiddleware,
+  zValidator("form", createWorkspaceSchema),
+
   async (c) => {
-    const databases = c.get("databases");
-    const user = c.get("user");
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
 
-    const { name } = c.req.valid("json");
+    if (!session) return c.json({ error: "bad request" });
 
-    const workspace = await databases.createDocument(
-      DATABASE_ID,
-      WORKSPACES_ID,
-      ID.unique(),
-      { name, userId: user.$id }
-    );
+    const { name, image } = c.req.valid("form");
+
+    let uploadedImageUrl: string | undefined;
+
+    if (image instanceof File) {
+      const file = await image.arrayBuffer();
+      const buffer = Buffer.from(file);
+      const outputFileName = path.join("./public/upload", `${image.name}`);
+      createWriteStream(outputFileName).write(buffer);
+
+      uploadedImageUrl = `data:image/png;base64,${Buffer.from(buffer).toString(
+        "base64"
+      )}`;
+    }
+
+    const workspace = await db.workspaces.create({
+      data: {
+        name,
+        imageUrl: uploadedImageUrl,
+        userId: session?.user.id,
+      },
+    });
 
     return c.json({ data: workspace });
   }

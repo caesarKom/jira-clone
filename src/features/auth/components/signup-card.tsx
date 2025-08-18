@@ -24,10 +24,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { registerSchema, RegisterType } from "../schemas";
-import { useRegister } from "../api/use-register";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export const SignupCard = () => {
-  const { mutate, isPending } = useRegister();
+  const router = useRouter();
 
   const form = useForm<RegisterType>({
     resolver: zodResolver(registerSchema),
@@ -38,8 +40,24 @@ export const SignupCard = () => {
     },
   });
 
-  const onSubmit = (values: RegisterType) => {
-    mutate({ json: values });
+  const onSubmit = async (values: RegisterType) => {
+    await authClient.signUp.email(
+      {
+        email: values.email,
+        password: values.password,
+        name: values.name,
+        callbackURL: "/",
+      },
+      {
+        onSuccess: () => {
+          toast.success("Registered");
+          router.push("/");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      }
+    );
   };
 
   return (
@@ -113,12 +131,7 @@ export const SignupCard = () => {
                 </FormItem>
               )}
             />
-            <Button
-              type="submit"
-              disabled={isPending}
-              size="lg"
-              className="w-full"
-            >
+            <Button type="submit" size="lg" className="w-full">
               Register
             </Button>
           </form>
@@ -128,21 +141,11 @@ export const SignupCard = () => {
         <DottedSeparator />
       </div>
       <CardFooter className="p-7 flex flex-col gap-y-4">
-        <Button
-          disabled={isPending}
-          variant="secondary"
-          size="lg"
-          className="w-full"
-        >
+        <Button variant="secondary" size="lg" className="w-full">
           <FcGoogle className="mr-2 size-5" />
           Login with Google
         </Button>
-        <Button
-          disabled={isPending}
-          variant="secondary"
-          size="lg"
-          className="w-full"
-        >
+        <Button variant="secondary" size="lg" className="w-full">
           <FaGithub className="mr-2 size-5" />
           Login with Github
         </Button>
