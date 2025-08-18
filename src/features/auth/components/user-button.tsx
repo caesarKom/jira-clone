@@ -1,7 +1,6 @@
 "use client";
 
 import { Loader, LogOut } from "lucide-react";
-import { useCurrent } from "../api/use-current";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -10,25 +9,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DottedSeparator } from "@/components/dotted-separator";
-import { useLogout } from "../api/use-logout";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export const UserButton = () => {
-  const { data: user, isLoading } = useCurrent();
-  const { mutate: logout } = useLogout();
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="size-10 rounded-full flex items-center justify-center bg-neutral-200 border border-neutral-300">
         <Loader className="size-4 animate-spin text-muted-foreground" />
       </div>
     );
   }
-  if (!user) return null;
+  if (!session?.user) return null;
 
-  const { name, email } = user;
-  const avatarFallback = name
-    ? name.charAt(0).toUpperCase()
-    : email.charAt(0).toUpperCase() ?? "U";
+  const avatarFallback = session.user.name
+    ? session.user.name.charAt(0).toUpperCase()
+    : session.user.email.charAt(0).toUpperCase() ?? "U";
 
   return (
     <DropdownMenu modal={false}>
@@ -53,15 +52,23 @@ export const UserButton = () => {
           </Avatar>
           <div className="flex flex-col items-center justify-center">
             <p className="text-sm font-medium text-neutral-900">
-              {name || "User"}
+              {session.user.name || "User"}
             </p>
-            <p className="text-xs text-neutral-500">{email}</p>
+            <p className="text-xs text-neutral-500">{session.user.email}</p>
           </div>
         </div>
         <DottedSeparator className="mb-1" />
         <DropdownMenuItem
           className="h-10 flex items-center justify-center text-amber-700 font-medium cursor-pointer"
-          onClick={() => logout()}
+          onClick={async () => {
+            await authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  router.push("/sign-in");
+                },
+              },
+            });
+          }}
         >
           <LogOut className="size-4 mr-2" />
           Log out
