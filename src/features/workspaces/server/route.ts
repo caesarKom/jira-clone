@@ -103,28 +103,48 @@ const app = new Hono()
       return c.json({ data: workspace });
     }
   )
-  .delete(
-    "/:workspaceId",
-    async (c) => {
-      const session = await auth.api.getSession({
-        headers: c.req.raw.headers,
-      });
+  .delete("/:workspaceId", async (c) => {
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
 
-      if (!session) return c.json({ error: "Unauthorized" }, 401);
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
 
-      const { workspaceId } = c.req.param();
+    const { workspaceId } = c.req.param();
 
-      // TODO: delete member,project and tasks
+    // TODO: delete member,project and tasks
 
-      const workspace = await db.workspaces.delete({
-        where: {
-          id: workspaceId,
-          userId: session.user.id,
-        },
-      });
+    const workspace = await db.workspaces.delete({
+      where: {
+        id: workspaceId,
+        userId: session.user.id,
+      },
+    });
 
-      return c.json({ id: workspace.id });
-    }
-  );
+    return c.json({ id: workspace.id });
+  })
+  .post("/:workspaceId/reset-invite-code", async (c) => {
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
+
+    if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+    const { workspaceId } = c.req.param();
+
+    // TODO: delete member,project and tasks
+
+    const workspace = await db.workspaces.update({
+      where: {
+        id: workspaceId,
+        userId: session.user.id,
+      },
+      data: {
+        inviteCode: generateInviteCode(10),
+      },
+    });
+
+    return c.json({ data: workspace });
+  });
 
 export default app;
