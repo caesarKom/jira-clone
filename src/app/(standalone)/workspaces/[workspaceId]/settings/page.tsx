@@ -1,4 +1,4 @@
-import { getWorkspaceId } from "@/features/workspaces/actions";
+import { getWorkspaceId } from "@/features/workspaces/queries";
 import { EditWorkspaceForm } from "@/features/workspaces/components/edit-workspace-form";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";

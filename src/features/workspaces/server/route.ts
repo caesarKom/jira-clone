@@ -102,6 +102,29 @@ const app = new Hono()
 
       return c.json({ data: workspace });
     }
+  )
+  .delete(
+    "/:workspaceId",
+    async (c) => {
+      const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+      });
+
+      if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+      const { workspaceId } = c.req.param();
+
+      // TODO: delete member,project and tasks
+
+      const workspace = await db.workspaces.delete({
+        where: {
+          id: workspaceId,
+          userId: session.user.id,
+        },
+      });
+
+      return c.json({ id: workspace.id });
+    }
   );
 
 export default app;
