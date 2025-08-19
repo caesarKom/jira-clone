@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { createWorkspaceSchema } from "../schemas";
+import { createWorkspaceSchema, updateWorkspaceSchema } from "../schemas";
 // import { createWriteStream } from "fs";
 // import path from "path";
 import { db } from "@/lib/db";
@@ -60,7 +60,47 @@ const app = new Hono()
         },
       });
 
-      return c.json({ data:workspace });
+      return c.json({ data: workspace });
+    }
+  )
+  .patch(
+    "/:workspaceId",
+    zValidator("form", updateWorkspaceSchema),
+    async (c) => {
+      const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+      });
+
+      if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+      const { workspaceId } = c.req.param();
+      const { name, image } = c.req.valid("form");
+
+      let uploadedImageUrl: string | undefined;
+
+      if (image instanceof File) {
+        const file = await image.arrayBuffer();
+        const buffer = Buffer.from(file);
+
+        uploadedImageUrl = `data:image/png;base64,${Buffer.from(
+          buffer
+        ).toString("base64")}`;
+      } else {
+        uploadedImageUrl = image;
+      }
+
+      const workspace = await db.workspaces.update({
+        where: {
+          userId: session.user.id,
+          id: workspaceId,
+        },
+        data: {
+          name: name,
+          imageUrl: uploadedImageUrl,
+        },
+      });
+
+      return c.json({ data: workspace });
     }
   );
 
