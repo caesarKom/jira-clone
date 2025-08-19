@@ -91,3 +91,18 @@ model Workspaces {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Member {
+  id          String     @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        MemberRole @default(ADMIN)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}

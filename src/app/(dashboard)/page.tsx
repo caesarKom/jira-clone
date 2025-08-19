@@ -1,4 +1,4 @@
-import { getWorkspace } from "@/features/workspaces/actions";
+import { getWorkspace } from "@/features/workspaces/queries";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
