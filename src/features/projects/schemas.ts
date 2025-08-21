@@ -8,7 +8,7 @@ export const createProjectsSchema = z.object({
       z.string().transform((value) => (value === "" ? undefined : value)),
     ])
     .optional(),
-    workspaceId: z.string()
+  workspaceId: z.string(),
 });
 
 export type CreateProjectsType = z.infer<typeof createProjectsSchema>;
