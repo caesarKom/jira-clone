@@ -90,19 +90,33 @@ model Workspaces {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  members Member[]
 }
 
 model Member {
-  id          String     @id @default(uuid())
-  workspaceId String
-  userId      String
-  role        MemberRole @default(ADMIN)
+  id     String     @id @default(uuid())
+  userId String
+  role   MemberRole
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  workspaceId String
+  Workspaces  Workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 enum MemberRole {
   ADMIN
   MEMBER
+}
+
+model Projects {
+  id          String  @id @default(uuid())
+  name        String
+  workspaceId String
+  imageUrl    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

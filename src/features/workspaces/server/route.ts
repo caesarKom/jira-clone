@@ -6,6 +6,8 @@ import { createWorkspaceSchema, updateWorkspaceSchema } from "../schemas";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { generateInviteCode } from "@/lib/utils";
+import z from "zod";
+import { MemberRole } from "@prisma/client";
 
 const app = new Hono()
   .get("/", async (c) => {
@@ -14,16 +16,32 @@ const app = new Hono()
     });
     if (!session) return c.json({ error: "Unauthorized" }, 401);
 
-    const workspaces = await db.workspaces.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+    const members = await db.member.findMany({
+      where: { userId: session.user.id },
     });
 
-    return c.json({ data: workspaces });
+    if (members.length === 0) {
+      return c.json({ data: [] });
+    }
+
+    const workIds = members.map((member) => member.workspaceId);
+
+    const workspace = await db.workspaces.findMany({
+      where: {
+        id: { in: workIds },
+      },
+      select: {
+        id: true,
+        userId: true,
+        imageUrl: true,
+        name: true,
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+
+    return c.json({ data: workspace });
   })
   .post(
     "/",
@@ -57,6 +75,14 @@ const app = new Hono()
           imageUrl: uploadedImageUrl,
           userId: session?.user.id,
           inviteCode: generateInviteCode(10),
+        },
+      });
+
+      await db.member.create({
+        data: {
+          role: MemberRole.ADMIN,
+          userId: workspace.userId,
+          workspaceId: workspace.id,
         },
       });
 
@@ -145,6 +171,51 @@ const app = new Hono()
     });
 
     return c.json({ data: workspace });
-  });
+  })
+  .post(
+    "/:workspaceId/join",
+    zValidator("json", z.object({ code: z.string() })),
+    async (c) => {
+      const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+      });
+
+      if (!session) return c.json({ error: "Unauthorized" }, 401);
+
+      const { workspaceId } = c.req.param();
+      const { code } = c.req.valid("json");
+
+      const member = await db.member.findFirst({
+        where: {
+          workspaceId,
+          userId: session.user.id,
+        },
+      });
+
+      if (member) {
+        return c.json({ error: "Already a member" }, 400);
+      }
+
+      const workspace = await db.workspaces.findUnique({
+        where: {
+          id: workspaceId,
+        },
+      });
+
+      if (workspace?.inviteCode !== code) {
+        return c.json({ error: "Invalid invite code" }, 400);
+      }
+
+      await db.member.create({
+        data: {
+          userId: session.user.id,
+          workspaceId: workspaceId,
+          role: MemberRole.MEMBER,
+        },
+      });
+
+      return c.json({ data: workspace });
+    }
+  );
 
 export default app;
