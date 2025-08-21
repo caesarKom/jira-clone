@@ -19,7 +19,7 @@ import { useRef } from "react";
 import Image from "next/image";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ImageIcon } from "lucide-react";
-//import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useCreateProject } from "../api/use-create-project";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
@@ -29,13 +29,13 @@ interface CreateProjectFormProps {
 }
 
 export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
-  const workspaceId = useWorkspaceId()
-  //const router = useRouter();
+  const workspaceId = useWorkspaceId();
+  const router = useRouter();
   const { mutate, isPending } = useCreateProject();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<CreateProjectsType>({
-    resolver: zodResolver(createProjectsSchema.omit({workspaceId:true})),
+    resolver: zodResolver(createProjectsSchema.omit({ workspaceId: true })),
     defaultValues: {
       name: "",
       image: "",
@@ -51,10 +51,9 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
     mutate(
       { form: finalValues },
       {
-        onSuccess: () => {
+        onSuccess: ({ data }) => {
           form.reset();
-          // TODO: redirect to project screen
-         // router.push(`/workspaces/${data.id}`);
+          router.push(`/workspaces/${workspaceId}/projects/${data.id}`);
         },
       }
     );
