@@ -9,5 +9,5 @@ export default async function WorkspaceIdPage() {
 
   if (!session) redirect("/sign-in");
 
-  return <div>workspace id page</div>;
+  return <div>workspace id page: </div>;
 }

@@ -41,3 +41,26 @@ export const getWorkspaceId = async ({
 
   return workspace;
 };
+
+export const getWorkspaceInfo = async ({
+  workspaceId,
+}: {
+  workspaceId: string;
+}) => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const workspace = await db.workspaces.findUnique({
+    where: {
+      id: workspaceId,
+    },
+    select: {
+      name: true
+    }
+  });
+
+  return {
+    name: workspace?.name
+  }
+};
