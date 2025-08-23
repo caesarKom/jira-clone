@@ -38,11 +38,12 @@ const app = new Hono()
           };
         })
       );
-      if (!populatedMembers || !members) {
+
+      if (!populatedMembers) {
         return c.json({ error: "Unauthorized" }, 401);
       }
 
-      return c.json({ data: populatedMembers }, 200);
+      return c.json({ data: populatedMembers });
     }
   )
   .delete("/:memberId", async (c) => {

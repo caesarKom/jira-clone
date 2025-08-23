@@ -32,7 +32,7 @@ const app = new Hono()
         where: { workspaceId: workspaceId },
       });
 
-      return c.json({ data: projects });
+      return c.json({ data: projects }); 
     }
   )
   .post("/", zValidator("form", createProjectsSchema), async (c) => {
