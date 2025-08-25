@@ -22,7 +22,7 @@ export const MemberAvatar = ({ fallbackClassName, name, className }: Props) => {
           fallbackClassName
         )}
       >
-        {name.charAt(0).toUpperCase()}
+        {name.charAt(0).toUpperCase() ?? ""}
       </AvatarFallback>
     </Avatar>
   );

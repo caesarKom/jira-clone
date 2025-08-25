@@ -10,17 +10,25 @@ import { useGetTask } from "../api/use-get-task";
 import { useQueryState } from "nuqs";
 import { DataFilters } from "./data-filters";
 import { useTaskFilters } from "../hooks/use-task-filter";
+import { DataTable } from "./data-table";
+import { columns } from "./columns";
 
 export const TaskViewSwitcher = () => {
-    const [{ status, assigneeId, projectId, dueDate }] =
-        useTaskFilters();
+  const [{ status, assigneeId, projectId, dueDate }] = useTaskFilters();
 
   const [view, setView] = useQueryState("task-view", {
     defaultValue: "table",
   });
 
   const workspaceId = useWorkspaceId();
-  const { data: tasks, isLoading: isLoadingTask } = useGetTask({ workspaceId, status, assigneeId, projectId, dueDate });
+  const { data: tasks, isLoading: isLoadingTask } = useGetTask({
+    workspaceId,
+    status,
+    assigneeId,
+    projectId,
+    dueDate,
+  });
+
   const { open } = useCreateTaskModal();
 
   return (
@@ -52,23 +60,21 @@ export const TaskViewSwitcher = () => {
         <DataFilters />
         <DottedSeparator className="my-4" />
         {isLoadingTask ? (
-            <div className="w-full border rounded-lg h-[200px] flex flex-col items-center justify-center">
-                <Loader className="size-5 animate-spin text-muted-foreground" />
-            </div>
-        ):(
-
-        
-        <>
-          <TabsContent value="table" className="mt-0">
-            {JSON.stringify(tasks)}
-          </TabsContent>
-          <TabsContent value="kanban" className="mt-0">
-           {JSON.stringify(tasks)}
-          </TabsContent>
-          <TabsContent value="calendar" className="mt-0">
-            {JSON.stringify(tasks)}
-          </TabsContent>
-        </>
+          <div className="w-full border rounded-lg h-[200px] flex flex-col items-center justify-center">
+            <Loader className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <TabsContent value="table" className="mt-0">
+              <DataTable columns={columns} data={tasks ?? []} />
+            </TabsContent>
+            <TabsContent value="kanban" className="mt-0">
+              {JSON.stringify(tasks)}
+            </TabsContent>
+            <TabsContent value="calendar" className="mt-0">
+              {JSON.stringify(tasks)}
+            </TabsContent>
+          </>
         )}
       </div>
     </Tabs>
