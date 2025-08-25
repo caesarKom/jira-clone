@@ -1,12 +1,44 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { createTaskSchema } from "../schemas";
-import { auth } from "@/lib/auth";
+import { createTaskSchema, updateTaskSchema } from "../schemas";
 import { db } from "@/lib/db";
 import z from "zod";
 import { TaskStatus } from "@prisma/client";
+import { getAuthUser } from "@/lib/getAuthUser";
 
 export const app = new Hono()
+  .get("/:taskId", async (c) => {
+    const user = await getAuthUser(c);
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const { taskId } = c.req.param();
+
+    const task = await db.tasks.findUnique({
+      where: { id: taskId },
+    });
+    if (!task) return c.json({ error: "Task not found" }, 404);
+
+    const member = await db.member.findFirst({
+      where: {
+        workspaceId: task.workspaceId,
+        id: task.assigneeId,
+      },
+    });
+    if (!member) return c.json({ error: "Unauthorized" }, 401);
+
+    const project = await db.projects.findUnique({
+      where: { id: task.projectId },
+    });
+    if (!project) return c.json({ error: "Project not found" }, 404);
+
+    const assignee = {
+      ...member,
+      name: user.name,
+      email: user.email,
+    };
+
+    return c.json({ data: { ...task, project, assignee } });
+  })
   .get(
     "/",
     zValidator(
@@ -21,11 +53,8 @@ export const app = new Hono()
       })
     ),
     async (c) => {
-      const session = await auth.api.getSession({
-        headers: c.req.raw.headers,
-      });
-
-      if (!session) return c.json({ error: "Unauthorized" }, 401);
+      const user = await getAuthUser(c);
+      if (!user) return c.json({ error: "Unauthorized" }, 401);
 
       const { workspaceId, projectId, status, search, assigneeId, dueDate } =
         c.req.valid("query");
@@ -33,7 +62,7 @@ export const app = new Hono()
       const member = await db.member.findFirst({
         where: {
           workspaceId,
-          userId: session.user.id,
+          userId: user.id,
         },
       });
 
@@ -41,7 +70,6 @@ export const app = new Hono()
         return c.json({ error: "Unauthorized" }, 401);
       }
 
- 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: any = {
         workspaceId,
@@ -68,10 +96,23 @@ export const app = new Hono()
         where,
         orderBy: { createdAt: "desc" },
         include: {
-          Projects: true,
+          Projects: {
+            select: {
+              id: true,
+              imageUrl: true,
+              name: true,
+              workspaceId: true,
+            },
+          },
           assignee: {
             include: {
-              user: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
             },
           },
         },
@@ -79,27 +120,25 @@ export const app = new Hono()
 
       const populatedTasks = tasks.map((task) => ({
         ...task,
-        project: task.Projects,
+        //project: task.Projects,
         assignee: task.assignee,
       }));
 
-      return c.json({ ...tasks, documents: populatedTasks });
+      return c.json({ ...tasks, data: populatedTasks });
     }
   )
   .post("/", zValidator("json", createTaskSchema), async (c) => {
-    const session = await auth.api.getSession({
-      headers: c.req.raw.headers,
-    });
-
-    if (!session) return c.json({ error: "Unauthorized" }, 401);
+    const user = await getAuthUser(c);
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const { name, status, workspaceId, projectId, dueDate, assigneeId } =
       c.req.valid("json");
 
+
     const member = await db.member.findFirst({
       where: {
         workspaceId,
-        userId: session.user.id,
+        userId: user.id,
       },
     });
 
@@ -140,6 +179,78 @@ export const app = new Hono()
     });
 
     return c.json({ data: task });
+  })
+  .patch(
+    "/:taskId",
+    zValidator("json", updateTaskSchema),
+    async (c) => {
+      const user = await getAuthUser(c);
+      if (!user) return c.json({ error: "Unauthorized" }, 401);
+      const { taskId } = c.req.param();
+      const { name, status, description, projectId, dueDate, assigneeId } =
+        c.req.valid("json");
+
+      const existingTask = await db.tasks.findUnique({ where: { id: taskId } });
+
+      if (!existingTask) return c.json({ error: "Task not found" }, 404);
+
+      const member = await db.member.findFirst({
+        where: {
+          workspaceId: existingTask.workspaceId,
+          userId: user.id,
+        },
+      });
+
+      if (!member) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+
+      const task = await db.tasks.update({
+        where: { id: existingTask.id },
+        data: {
+          name,
+          status,
+          projectId,
+          dueDate,
+          assigneeId,
+          description,
+        },
+      });
+
+      return c.json({ data: task });
+    }
+  )
+
+  .delete("/:taskId", async (c) => {
+    const user = await getAuthUser(c);
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const { taskId } = c.req.param();
+
+    const existTask = await db.tasks.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!existTask) {
+      return c.json({ error: "Task not found" }, 404);
+    }
+
+    const member = await db.member.findFirst({
+      where: {
+        workspaceId: existTask.workspaceId,
+        userId: user.id,
+      },
+    });
+
+    if (!member) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    await db.tasks.delete({
+      where: { id: existTask.id },
+    });
+
+    return c.json({ data: { id: existTask.id } });
   });
 
 export default app;

@@ -13,7 +13,7 @@ export const useGetMembers = ({workspaceId}:{workspaceId:string}) => {
 
       const { data } = await response.json();
 
-      return data;
+      return data as NonNullable<typeof data[number]>[];
     },
   });
 
