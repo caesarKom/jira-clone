@@ -20,8 +20,6 @@ export type TaskType = {
   position: number;
   dueDate: string;
   workspaceId: string;
-  createdAt: string;
-  updateAt: string;
   description: string | null;
   id: string;
   Projects: {
@@ -34,8 +32,6 @@ export type TaskType = {
     user: { name: string; id: string; email: string };
     id: string;
     userId: string;
-    createdAt: string;
-    updateAt: string;
     workspaceId: string;
     role: MemberRole;
   };

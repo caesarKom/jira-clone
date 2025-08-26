@@ -12,9 +12,16 @@ import { DataFilters } from "./data-filters";
 import { useTaskFilters } from "../hooks/use-task-filter";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
+import { DataKanban } from "./data-kanban";
+import { useCallback } from "react";
+import { TaskStatus } from "@prisma/client";
+import { useBulkUpdateTasks } from "../api/use-bulk-update-tasks";
 
 export const TaskViewSwitcher = () => {
   const [{ status, assigneeId, projectId, dueDate }] = useTaskFilters();
+  const { open } = useCreateTaskModal();
+
+  const { mutate: bulkUpdateTasks } = useBulkUpdateTasks();
 
   const [view, setView] = useQueryState("task-view", {
     defaultValue: "table",
@@ -29,7 +36,12 @@ export const TaskViewSwitcher = () => {
     dueDate,
   });
 
-  const { open } = useCreateTaskModal();
+  const onKanbanChange = useCallback(
+    (tasks: { id: string; status: TaskStatus; position: number }[]) => {
+      bulkUpdateTasks({ json: { tasks } });
+    },
+    [bulkUpdateTasks]
+  );
 
   return (
     <Tabs
@@ -69,7 +81,7 @@ export const TaskViewSwitcher = () => {
               <DataTable columns={columns} data={tasks ?? []} />
             </TabsContent>
             <TabsContent value="kanban" className="mt-0">
-              {JSON.stringify(tasks)}
+              <DataKanban onChange={onKanbanChange} data={tasks ?? []} />
             </TabsContent>
             <TabsContent value="calendar" className="mt-0">
               {JSON.stringify(tasks)}
