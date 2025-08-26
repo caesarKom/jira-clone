@@ -134,7 +134,6 @@ export const app = new Hono()
     const { name, status, workspaceId, projectId, dueDate, assigneeId } =
       c.req.valid("json");
 
-
     const member = await db.member.findFirst({
       where: {
         workspaceId,
@@ -180,46 +179,42 @@ export const app = new Hono()
 
     return c.json({ data: task });
   })
-  .patch(
-    "/:taskId",
-    zValidator("json", updateTaskSchema),
-    async (c) => {
-      const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
-      const { taskId } = c.req.param();
-      const { name, status, description, projectId, dueDate, assigneeId } =
-        c.req.valid("json");
+  .patch("/:taskId", zValidator("json", updateTaskSchema), async (c) => {
+    const user = await getAuthUser(c);
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    const { taskId } = c.req.param();
+    const { name, status, description, projectId, dueDate, assigneeId } =
+      c.req.valid("json");
 
-      const existingTask = await db.tasks.findUnique({ where: { id: taskId } });
+    const existingTask = await db.tasks.findUnique({ where: { id: taskId } });
 
-      if (!existingTask) return c.json({ error: "Task not found" }, 404);
+    if (!existingTask) return c.json({ error: "Task not found" }, 404);
 
-      const member = await db.member.findFirst({
-        where: {
-          workspaceId: existingTask.workspaceId,
-          userId: user.id,
-        },
-      });
+    const member = await db.member.findFirst({
+      where: {
+        workspaceId: existingTask.workspaceId,
+        userId: user.id,
+      },
+    });
 
-      if (!member) {
-        return c.json({ error: "Unauthorized" }, 401);
-      }
-
-      const task = await db.tasks.update({
-        where: { id: existingTask.id },
-        data: {
-          name,
-          status,
-          projectId,
-          dueDate,
-          assigneeId,
-          description,
-        },
-      });
-
-      return c.json({ data: task });
+    if (!member) {
+      return c.json({ error: "Unauthorized" }, 401);
     }
-  )
+
+    const task = await db.tasks.update({
+      where: { id: existingTask.id },
+      data: {
+        name,
+        status,
+        projectId,
+        dueDate,
+        assigneeId,
+        description,
+      },
+    });
+
+    return c.json({ data: task });
+  })
 
   .delete("/:taskId", async (c) => {
     const user = await getAuthUser(c);
@@ -251,6 +246,70 @@ export const app = new Hono()
     });
 
     return c.json({ data: { id: existTask.id } });
-  });
+  })
+  .post(
+    "/bulk-update",
+    zValidator(
+      "json",
+      z.object({
+        tasks: z.array(
+          z.object({
+            id: z.string(),
+            status: z.enum(TaskStatus),
+            position: z.number().int().positive().min(1000).max(1_000_000),
+          })
+        ),
+      })
+    ),
+    async (c) => {
+      const user = await getAuthUser(c);
+      if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+      const { tasks } = c.req.valid("json");
+
+      // Get all tasks id
+      const taskIds = tasks.map((t) => t.id);
+      const dbTasks = await db.tasks.findMany({
+        where: { id: { in: taskIds } },
+        select: { id: true, workspaceId: true },
+      });
+
+      if (dbTasks.length !== tasks.length) {
+        return c.json({ error: "Some tasks not found" }, 404);
+      }
+
+      const workspaceIds = new Set(dbTasks.map((t) => t.workspaceId));
+      if (workspaceIds.size !== 1) {
+        return c.json(
+          { error: "All tasks must belong to the same workspace" },
+          400
+        );
+      }
+
+      const workspaceId = workspaceIds.values().next().value;
+
+      const member = await db.member.findFirst({
+        where: {
+          workspaceId,
+          userId: user.id,
+        },
+      });
+
+      if (!member) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+
+      const updatedTasks = await db.$transaction(
+        tasks.map(({ id, status, position }) =>
+          db.tasks.update({
+            where: { id },
+            data: { status, position },
+          })
+        )
+      );
+
+      return c.json({ data: updatedTasks });
+    }
+  );
 
 export default app;
