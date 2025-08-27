@@ -1,4 +1,4 @@
-import { MemberRole, TaskStatus } from "@prisma/client";
+import { MemberRole, TaskStatus } from '@prisma/client';
 
 export type TaskT = {
   workspaceId: string;
@@ -20,12 +20,12 @@ export type Project = {
 };
 
 export type Assignee = {
-    user: { name: string; id: string; email: string };
-    id: string;
-    userId: string;
-    workspaceId: string;
-    role: MemberRole;
-  };
+  user: { name: string; id: string; email: string };
+  id: string;
+  userId: string;
+  workspaceId: string;
+  role: MemberRole;
+};
 
 export type TaskType = {
   name: string;
@@ -40,4 +40,3 @@ export type TaskType = {
   Projects: Project;
   assignee: Assignee;
 };
-

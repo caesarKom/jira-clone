@@ -1,12 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { ProjectAvatar } from "@/features/projects/components/project-avatar";
-import { getProjectId } from "@/features/projects/queries";
-import { TaskViewSwitcher } from "@/features/tasks/components/task-view-switcher";
-import { auth } from "@/lib/auth";
-import { PencilIcon } from "lucide-react";
-import { headers } from "next/headers";
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import { Button } from '@/components/ui/button';
+import { ProjectAvatar } from '@/features/projects/components/project-avatar';
+import { getProjectId } from '@/features/projects/queries';
+import { TaskViewSwitcher } from '@/features/tasks/components/task-view-switcher';
+import { auth } from '@/lib/auth';
+import { PencilIcon } from 'lucide-react';
+import { headers } from 'next/headers';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 type Params = Promise<{ projectId: string }>;
 
@@ -16,12 +16,12 @@ export default async function ProjectIdPage({ params }: { params: Params }) {
     headers: await headers(),
   });
 
-  if (!session) redirect("/sign-in");
+  if (!session) redirect('/sign-in');
 
   const initialValues = await getProjectId({ projectId });
 
   if (!initialValues) {
-    throw new Error("Project not found");
+    throw new Error('Project not found');
   }
 
   return (
@@ -29,7 +29,7 @@ export default async function ProjectIdPage({ params }: { params: Params }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-x-2">
           <ProjectAvatar
-            image={initialValues.imageUrl ?? ""}
+            image={initialValues.imageUrl ?? ''}
             name={initialValues.name}
             className="size-8"
           />
@@ -48,7 +48,7 @@ export default async function ProjectIdPage({ params }: { params: Params }) {
         </div>
       </div>
 
-      <TaskViewSwitcher />
+      <TaskViewSwitcher hideProjectFilter />
     </div>
   );
 }

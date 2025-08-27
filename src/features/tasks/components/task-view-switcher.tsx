@@ -1,31 +1,35 @@
-"use client";
+'use client';
 
-import { DottedSeparator } from "@/components/dotted-separator";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader, PlusIcon } from "lucide-react";
-import { useCreateTaskModal } from "../hooks/use-create-task-modal";
-import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
-import { useGetTask } from "../api/use-get-task";
-import { useQueryState } from "nuqs";
-import { DataFilters } from "./data-filters";
-import { useTaskFilters } from "../hooks/use-task-filter";
-import { DataTable } from "./data-table";
-import { columns } from "./columns";
-import { DataKanban } from "./data-kanban";
-import { useCallback } from "react";
-import { TaskStatus } from "@prisma/client";
-import { useBulkUpdateTasks } from "../api/use-bulk-update-tasks";
-import { DataCalendar } from "./data-calendar";
+import { DottedSeparator } from '@/components/dotted-separator';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader, PlusIcon } from 'lucide-react';
+import { useCreateTaskModal } from '../hooks/use-create-task-modal';
+import { useWorkspaceId } from '@/features/workspaces/hooks/use-workspace-id';
+import { useGetTask } from '../api/use-get-task';
+import { useQueryState } from 'nuqs';
+import { DataFilters } from './data-filters';
+import { useTaskFilters } from '../hooks/use-task-filter';
+import { DataTable } from './data-table';
+import { columns } from './columns';
+import { DataKanban } from './data-kanban';
+import { useCallback } from 'react';
+import { TaskStatus } from '@prisma/client';
+import { useBulkUpdateTasks } from '../api/use-bulk-update-tasks';
+import { DataCalendar } from './data-calendar';
 
-export const TaskViewSwitcher = () => {
+export const TaskViewSwitcher = ({
+  hideProjectFilter,
+}: {
+  hideProjectFilter?: boolean;
+}) => {
   const [{ status, assigneeId, projectId, dueDate }] = useTaskFilters();
   const { open } = useCreateTaskModal();
 
   const { mutate: bulkUpdateTasks } = useBulkUpdateTasks();
 
-  const [view, setView] = useQueryState("task-view", {
-    defaultValue: "table",
+  const [view, setView] = useQueryState('task-view', {
+    defaultValue: 'table',
   });
 
   const workspaceId = useWorkspaceId();
@@ -70,7 +74,9 @@ export const TaskViewSwitcher = () => {
           </Button>
         </div>
         <DottedSeparator className="my-4" />
-        <DataFilters />
+
+        <DataFilters hideProjectFilter={hideProjectFilter} />
+        
         <DottedSeparator className="my-4" />
         {isLoadingTask ? (
           <div className="w-full border rounded-lg h-[200px] flex flex-col items-center justify-center">
