@@ -1,48 +1,72 @@
-import { zValidator } from "@hono/zod-validator";
-import { Hono } from "hono";
-import { createTaskSchema, updateTaskSchema } from "../schemas";
-import { db } from "@/lib/db";
-import z from "zod";
-import { TaskStatus } from "@prisma/client";
-import { getAuthUser } from "@/lib/getAuthUser";
+import z from 'zod';
+import { zValidator } from '@hono/zod-validator';
+import { Hono } from 'hono';
+import { createTaskSchema, updateTaskSchema } from '../schemas';
+import { db } from '@/lib/db';
+import { TaskStatus } from '@prisma/client';
+import { getAuthUser } from '@/lib/getAuthUser';
 
 export const app = new Hono()
-  .get("/:taskId", async (c) => {
+  .get('/:taskId', async (c) => {
     const user = await getAuthUser(c);
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
     const { taskId } = c.req.param();
 
     const task = await db.tasks.findUnique({
       where: { id: taskId },
+      select: {
+        name: true,
+        id: true,
+        workspaceId: true,
+        assigneeId: true,
+        description: true,
+        dueDate: true,
+        status: true,
+        position: true,
+        projectId: true,
+      },
     });
-    if (!task) return c.json({ error: "Task not found" }, 404);
+    if (!task) return c.json({ error: 'Task not found' }, 404);
 
     const member = await db.member.findFirst({
       where: {
         workspaceId: task.workspaceId,
         id: task.assigneeId,
       },
+      select: {
+        id: true,
+        role: true,
+        userId: true,
+        workspaceId: true,
+      },
     });
-    if (!member) return c.json({ error: "Unauthorized" }, 401);
+    if (!member) return c.json({ error: 'Unauthorized' }, 401);
 
-    const project = await db.projects.findUnique({
+    const Projects = await db.projects.findUnique({
       where: { id: task.projectId },
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+        workspaceId: true,
+      },
     });
-    if (!project) return c.json({ error: "Project not found" }, 404);
+    if (!Projects) return c.json({ error: 'Project not found' }, 404);
 
     const assignee = {
       ...member,
       name: user.name,
       email: user.email,
+      user: { id: user.id, name: user.name, email: user.email },
     };
 
-    return c.json({ data: { ...task, project, assignee } });
+    return c.json({ data: { ...task, Projects, assignee } });
   })
   .get(
-    "/",
+    '/',
     zValidator(
-      "query",
+      'query',
       z.object({
         workspaceId: z.string(),
         projectId: z.string().nullish(),
@@ -54,10 +78,10 @@ export const app = new Hono()
     ),
     async (c) => {
       const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+      if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
       const { workspaceId, projectId, status, search, assigneeId, dueDate } =
-        c.req.valid("query");
+        c.req.valid('query');
 
       const member = await db.member.findFirst({
         where: {
@@ -67,7 +91,7 @@ export const app = new Hono()
       });
 
       if (!member) {
-        return c.json({ error: "Unauthorized" }, 401);
+        return c.json({ error: 'Unauthorized' }, 401);
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,13 +112,13 @@ export const app = new Hono()
       if (search) {
         where.name = {
           contains: search,
-          mode: "insensitive",
+          mode: 'insensitive',
         };
       }
 
       const tasks = await db.tasks.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         include: {
           Projects: {
             select: {
@@ -127,12 +151,12 @@ export const app = new Hono()
       return c.json({ ...tasks, data: populatedTasks });
     }
   )
-  .post("/", zValidator("json", createTaskSchema), async (c) => {
+  .post('/', zValidator('json', createTaskSchema), async (c) => {
     const user = await getAuthUser(c);
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
     const { name, status, workspaceId, projectId, dueDate, assigneeId } =
-      c.req.valid("json");
+      c.req.valid('json');
 
     const member = await db.member.findFirst({
       where: {
@@ -142,7 +166,7 @@ export const app = new Hono()
     });
 
     if (!member) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return c.json({ error: 'Unauthorized' }, 401);
     }
 
     const highestPositionTask = await db.tasks.findMany({
@@ -155,7 +179,7 @@ export const app = new Hono()
         position: true,
       },
       orderBy: {
-        position: "asc",
+        position: 'asc',
       },
       take: 1,
     });
@@ -179,16 +203,16 @@ export const app = new Hono()
 
     return c.json({ data: task });
   })
-  .patch("/:taskId", zValidator("json", updateTaskSchema), async (c) => {
+  .patch('/:taskId', zValidator('json', updateTaskSchema), async (c) => {
     const user = await getAuthUser(c);
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
     const { taskId } = c.req.param();
     const { name, status, description, projectId, dueDate, assigneeId } =
-      c.req.valid("json");
+      c.req.valid('json');
 
     const existingTask = await db.tasks.findUnique({ where: { id: taskId } });
 
-    if (!existingTask) return c.json({ error: "Task not found" }, 404);
+    if (!existingTask) return c.json({ error: 'Task not found' }, 404);
 
     const member = await db.member.findFirst({
       where: {
@@ -198,7 +222,7 @@ export const app = new Hono()
     });
 
     if (!member) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return c.json({ error: 'Unauthorized' }, 401);
     }
 
     const task = await db.tasks.update({
@@ -216,9 +240,9 @@ export const app = new Hono()
     return c.json({ data: task });
   })
 
-  .delete("/:taskId", async (c) => {
+  .delete('/:taskId', async (c) => {
     const user = await getAuthUser(c);
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
     const { taskId } = c.req.param();
 
@@ -227,7 +251,7 @@ export const app = new Hono()
     });
 
     if (!existTask) {
-      return c.json({ error: "Task not found" }, 404);
+      return c.json({ error: 'Task not found' }, 404);
     }
 
     const member = await db.member.findFirst({
@@ -238,7 +262,7 @@ export const app = new Hono()
     });
 
     if (!member) {
-      return c.json({ error: "Unauthorized" }, 401);
+      return c.json({ error: 'Unauthorized' }, 401);
     }
 
     await db.tasks.delete({
@@ -248,9 +272,9 @@ export const app = new Hono()
     return c.json({ data: { id: existTask.id } });
   })
   .post(
-    "/bulk-update",
+    '/bulk-update',
     zValidator(
-      "json",
+      'json',
       z.object({
         tasks: z.array(
           z.object({
@@ -263,9 +287,9 @@ export const app = new Hono()
     ),
     async (c) => {
       const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+      if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
-      const { tasks } = c.req.valid("json");
+      const { tasks } = c.req.valid('json');
 
       // Get all tasks id
       const taskIds = tasks.map((t) => t.id);
@@ -275,13 +299,13 @@ export const app = new Hono()
       });
 
       if (dbTasks.length !== tasks.length) {
-        return c.json({ error: "Some tasks not found" }, 404);
+        return c.json({ error: 'Some tasks not found' }, 404);
       }
 
       const workspaceIds = new Set(dbTasks.map((t) => t.workspaceId));
       if (workspaceIds.size !== 1) {
         return c.json(
-          { error: "All tasks must belong to the same workspace" },
+          { error: 'All tasks must belong to the same workspace' },
           400
         );
       }
@@ -296,7 +320,7 @@ export const app = new Hono()
       });
 
       if (!member) {
-        return c.json({ error: "Unauthorized" }, 401);
+        return c.json({ error: 'Unauthorized' }, 401);
       }
 
       const updatedTasks = await db.$transaction(
