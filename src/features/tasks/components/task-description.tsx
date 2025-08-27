@@ -7,20 +7,27 @@ import { Textarea } from '@/components/ui/textarea';
 import { TaskType } from '../types';
 
 interface Props {
-  task: TaskType
+  task: TaskType;
 }
 
 export const TaskDescription = ({ task }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(task.description ?? "");
+  const [value, setValue] = useState(task.description ?? '');
 
   const { mutate, isPending } = useUpdateTask();
 
   const handleSave = () => {
-    mutate({
-      param: { taskId: task.id },
-      json: { ...task, description: value },
-    });
+    mutate(
+      {
+        param: { taskId: task.id },
+        json: { ...task, description: value },
+      },
+      {
+        onSuccess: () => {
+          setIsEditing(false);
+        },
+      }
+    );
   };
 
   return (
