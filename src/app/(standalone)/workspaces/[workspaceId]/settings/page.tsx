@@ -1,30 +1,14 @@
-import { getWorkspaceId } from "@/features/workspaces/queries";
-import { EditWorkspaceForm } from "@/features/workspaces/components/edit-workspace-form";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { WorkspaceIdSettingsClient } from './client';
 
-type Params = Promise<{ workspaceId: string }>;
-
-export default async function WorkspaceIdSettingsPage({
-  params,
-}: {
-  params: Params;
-}) {
-  const { workspaceId } = await params;
+export default async function WorkspaceIdSettingsPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  if (!session) redirect("/sign-in");
+  if (!session) redirect('/sign-in');
 
-  const initialValues = await getWorkspaceId({ workspaceId });
-
-  if (!initialValues) redirect(`/workspaces/${workspaceId}`);
-
-  return (
-    <div className="w-full lg:max-w-xl">
-      <EditWorkspaceForm initialValues={initialValues} />
-    </div>
-  );
+  return <WorkspaceIdSettingsClient />;
 }

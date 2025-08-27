@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { headers } from "next/headers";
+import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { headers } from 'next/headers';
 
 export const getWorkspace = async () => {
   const session = await auth.api.getSession({
@@ -12,7 +12,7 @@ export const getWorkspace = async () => {
       userId: session?.user.id,
     },
     orderBy: {
-      createdAt: "desc",
+      createdAt: 'desc',
     },
   });
 
@@ -21,46 +21,4 @@ export const getWorkspace = async () => {
   }
 
   return workspaces;
-};
-
-export const getWorkspaceId = async ({
-  workspaceId,
-}: {
-  workspaceId: string;
-}) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  const workspace = await db.workspaces.findUnique({
-    where: {
-      id: workspaceId,
-      userId: session?.user.id,
-    },
-  });
-
-  return workspace;
-};
-
-export const getWorkspaceInfo = async ({
-  workspaceId,
-}: {
-  workspaceId: string;
-}) => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  const workspace = await db.workspaces.findUnique({
-    where: {
-      id: workspaceId,
-    },
-    select: {
-      name: true
-    }
-  });
-
-  return {
-    name: workspace?.name
-  }
 };

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { updateProjectsSchema, UpdateProjectsType } from "../schemas";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DottedSeparator } from "@/components/dotted-separator";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { updateProjectsSchema, UpdateProjectsType } from '../schemas';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DottedSeparator } from '@/components/dotted-separator';
 import {
   Form,
   FormControl,
@@ -12,23 +12,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useRef } from "react";
-import Image from "next/image";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeftIcon, ImageIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Projects } from "@prisma/client";
-import { useConfirm } from "@/hooks/use-confirm";
-import { useUpdateProject } from "../api/use-update-project";
-import { useDeleteProject } from "../api/use-delete-project";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useRef } from 'react';
+import Image from 'next/image';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ArrowLeftIcon, ImageIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { useConfirm } from '@/hooks/use-confirm';
+import { useUpdateProject } from '../api/use-update-project';
+import { useDeleteProject } from '../api/use-delete-project';
+import { type Project } from '../types';
 
 interface EditProjectFormProps {
   onCancel?: () => void;
-  initialValues: Projects;
+  initialValues: Project;
 }
 
 export const EditProjectForm = ({
@@ -42,16 +42,16 @@ export const EditProjectForm = ({
     useDeleteProject();
 
   const [DeleteDialog, confirmDelete] = useConfirm(
-    "Delete Project",
-    "This action cannot be undone.",
-    "destructive"
+    'Delete Project',
+    'This action cannot be undone.',
+    'destructive'
   );
 
   const form = useForm<UpdateProjectsType>({
     resolver: zodResolver(updateProjectsSchema),
     defaultValues: {
       ...initialValues,
-      image: initialValues.imageUrl ?? "",
+      image: initialValues.imageUrl ?? '',
     },
   });
 
@@ -71,22 +71,15 @@ export const EditProjectForm = ({
   const onSubmit = (values: UpdateProjectsType) => {
     const finalValues = {
       ...values,
-      image: values.image instanceof File ? values.image : "",
+      image: values.image instanceof File ? values.image : '',
     };
-    mutate(
-      { form: finalValues, param: { projectId: initialValues.id } },
-      {
-        onSuccess: () => {
-          form.reset();
-        },
-      }
-    );
+    mutate({ form: finalValues, param: { projectId: initialValues.id } });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      form.setValue("image", file);
+      form.setValue('image', file);
     }
   };
 
@@ -186,7 +179,7 @@ export const EditProjectForm = ({
                               onClick={() => {
                                 field.onChange(null);
                                 if (inputRef.current) {
-                                  inputRef.current.value = "";
+                                  inputRef.current.value = '';
                                 }
                               }}
                             >
@@ -218,7 +211,7 @@ export const EditProjectForm = ({
                   variant="secondary"
                   onClick={onCancel}
                   disabled={isPending}
-                  className={cn(!onCancel && "invisible")}
+                  className={cn(!onCancel && 'invisible')}
                 >
                   Cancel
                 </Button>

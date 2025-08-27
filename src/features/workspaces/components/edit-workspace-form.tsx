@@ -22,15 +22,15 @@ import { ArrowLeftIcon, CopyIcon, ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUpdateWorkspace } from "../api/use-update-workspace";
-import { Workspaces } from "@prisma/client";
 import { useConfirm } from "@/hooks/use-confirm";
 import { useDeleteWorkspace } from "../api/use-delete-workspace";
 import { toast } from "sonner";
 import { useResetInviteCode } from "../api/use-reset-invite-code";
+import { Workspace } from "../types";
 
 interface EditWorkspaceFormProps {
   onCancel?: () => void;
-  initialValues: Workspaces;
+  initialValues: Workspace;
 }
 
 export const EditWorkspaceForm = ({
@@ -91,11 +91,6 @@ export const EditWorkspaceForm = ({
     };
     mutate(
       { form: finalValues, param: { workspaceId: initialValues.id } },
-      {
-        onSuccess: () => {
-          form.reset();
-        },
-      }
     );
   };
 

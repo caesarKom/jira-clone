@@ -1,19 +1,75 @@
-import { zValidator } from "@hono/zod-validator";
-import { Hono } from "hono";
-import { createWorkspaceSchema, updateWorkspaceSchema } from "../schemas";
+import z from 'zod';
+import { zValidator } from '@hono/zod-validator';
+import { Hono } from 'hono';
+import { createWorkspaceSchema, updateWorkspaceSchema } from '../schemas';
 // import { createWriteStream } from "fs";
 // import path from "path";
-import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
-import { generateInviteCode } from "@/lib/utils";
-import z from "zod";
-import { MemberRole } from "@prisma/client";
-import { getAuthUser } from "@/lib/getAuthUser";
+import { db } from '@/lib/db';
+import { generateInviteCode } from '@/lib/utils';
+import { MemberRole } from '@prisma/client';
+import { getAuthUser } from '@/lib/getAuthUser';
 
 const app = new Hono()
-  .get("/", async (c) => {
+  .get('/:workspaceId/info', async (c) => {
     const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { workspaceId } = c.req.param();
+
+    const workspace = await db.workspaces.findUnique({
+      where: {
+        id: workspaceId,
+      },
+      select: {
+        id: true,
+        imageUrl: true,
+        name: true,
+      },
+    });
+
+    if (!workspace) {
+      return c.json({ error: 'Workspace not found' }, 404);
+    }
+
+    return c.json({ data: workspace });
+  })
+  .get('/:workspaceId', async (c) => {
+    const user = await getAuthUser(c);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { workspaceId } = c.req.param();
+
+    const member = await db.member.findFirst({
+      where: { userId: user.id, workspaceId },
+    });
+
+    if (!member) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const workspace = await db.workspaces.findUnique({
+      where: {
+        id: workspaceId,
+      },
+      select: {
+        id: true,
+        imageUrl: true,
+        name: true,
+        projectId: true,
+        userId: true,
+        inviteCode: true,
+      },
+    });
+
+    if (!workspace) {
+      return c.json({ error: 'Workspace not found' }, 404);
+    }
+
+    return c.json({ data: workspace });
+  })
+  .get('/', async (c) => {
+    const user = await getAuthUser(c);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
     const members = await db.member.findMany({
       where: { userId: user.id },
@@ -36,21 +92,21 @@ const app = new Hono()
         name: true,
       },
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: 'desc',
+      },
     });
 
     return c.json({ data: workspace });
   })
   .post(
-    "/",
-    zValidator("form", createWorkspaceSchema),
+    '/',
+    zValidator('form', createWorkspaceSchema),
 
     async (c) => {
       const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+      if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
-      const { name, image } = c.req.valid("form");
+      const { name, image } = c.req.valid('form');
 
       let uploadedImageUrl: string | undefined;
 
@@ -62,7 +118,7 @@ const app = new Hono()
 
         uploadedImageUrl = `data:image/png;base64,${Buffer.from(
           buffer
-        ).toString("base64")}`;
+        ).toString('base64')}`;
       }
 
       const workspace = await db.workspaces.create({
@@ -86,14 +142,14 @@ const app = new Hono()
     }
   )
   .patch(
-    "/:workspaceId",
-    zValidator("form", updateWorkspaceSchema),
+    '/:workspaceId',
+    zValidator('form', updateWorkspaceSchema),
     async (c) => {
       const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+      if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
       const { workspaceId } = c.req.param();
-      const { name, image } = c.req.valid("form");
+      const { name, image } = c.req.valid('form');
 
       let uploadedImageUrl: string | undefined;
 
@@ -103,7 +159,7 @@ const app = new Hono()
 
         uploadedImageUrl = `data:image/png;base64,${Buffer.from(
           buffer
-        ).toString("base64")}`;
+        ).toString('base64')}`;
       } else {
         uploadedImageUrl = image;
       }
@@ -122,9 +178,9 @@ const app = new Hono()
       return c.json({ data: workspace });
     }
   )
-  .delete("/:workspaceId", async (c) => {
+  .delete('/:workspaceId', async (c) => {
     const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
     const { workspaceId } = c.req.param();
 
@@ -139,9 +195,9 @@ const app = new Hono()
 
     return c.json({ id: workspace.id });
   })
-  .post("/:workspaceId/reset-invite-code", async (c) => {
+  .post('/:workspaceId/reset-invite-code', async (c) => {
     const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
     const { workspaceId } = c.req.param();
 
@@ -160,14 +216,14 @@ const app = new Hono()
     return c.json({ data: workspace });
   })
   .post(
-    "/:workspaceId/join",
-    zValidator("json", z.object({ code: z.string() })),
+    '/:workspaceId/join',
+    zValidator('json', z.object({ code: z.string() })),
     async (c) => {
       const user = await getAuthUser(c);
-      if (!user) return c.json({ error: "Unauthorized" }, 401);
+      if (!user) return c.json({ error: 'Unauthorized' }, 401);
 
       const { workspaceId } = c.req.param();
-      const { code } = c.req.valid("json");
+      const { code } = c.req.valid('json');
 
       const member = await db.member.findFirst({
         where: {
@@ -177,7 +233,7 @@ const app = new Hono()
       });
 
       if (member) {
-        return c.json({ error: "Already a member" }, 400);
+        return c.json({ error: 'Already a member' }, 400);
       }
 
       const workspace = await db.workspaces.findUnique({
@@ -187,7 +243,7 @@ const app = new Hono()
       });
 
       if (workspace?.inviteCode !== code) {
-        return c.json({ error: "Invalid invite code" }, 400);
+        return c.json({ error: 'Invalid invite code' }, 400);
       }
 
       await db.member.create({

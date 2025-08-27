@@ -1,28 +1,14 @@
-import { EditProjectForm } from "@/features/projects/components/edit-project-form";
-import { getProjectId } from "@/features/projects/queries";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { ProjectIdSetingsClient } from './client';
 
-type Params = Promise<{ projectId: string }>;
-
-export default async function ProjectIdSetingsPage({
-  params,
-}: {
-  params: Params;
-}) {
-  const { projectId } = await params;
+export default async function ProjectIdSetingsPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  if (!session) redirect("/sign-in");
+  if (!session) redirect('/sign-in');
 
-  const initialValues = await getProjectId({ projectId });
-
-  return (
-    <div className="w-full lg:max-w-xl">
-      <EditProjectForm initialValues={initialValues} />
-    </div>
-  );
+  return <ProjectIdSetingsClient />;
 }
