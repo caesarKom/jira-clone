@@ -189,19 +189,16 @@ const app = new Hono()
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    // 3. Zakresy dat
     const now = new Date();
     const thisMonthStart = startOfMonth(now);
     const thisMonthEnd = endOfMonth(now);
     const lastMonthStart = startOfMonth(subMonths(now, 1));
     const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
-    // 4. Pomocnicza funkcja do zliczania
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const countTasks = async (filter: any) =>
       db.tasks.count({ where: { projectId, ...filter } });
 
-    // 5. Liczby za ten miesiąc
     const taskCount = await countTasks({
       createdAt: { gte: thisMonthStart, lte: thisMonthEnd },
     });
@@ -223,7 +220,6 @@ const app = new Hono()
       dueDate: { lt: now },
     });
 
-    // 6. Liczby za poprzedni miesiąc
     const lastTaskCount = await countTasks({
       createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
     });
@@ -245,7 +241,6 @@ const app = new Hono()
       dueDate: { lt: now },
     });
 
-    // 7. Różnice
     return c.json({
       data: {
         taskCount,

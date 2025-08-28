@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { WorkspaceIdClient } from "./client";
 
 export default async function WorkspaceIdPage() {
   const session = await auth.api.getSession({
@@ -9,5 +10,5 @@ export default async function WorkspaceIdPage() {
 
   if (!session) redirect("/sign-in");
 
-  return <div>workspace id page: </div>;
+  return <WorkspaceIdClient />
 }

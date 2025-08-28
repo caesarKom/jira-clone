@@ -2,11 +2,12 @@ import z from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { createWorkspaceSchema, updateWorkspaceSchema } from '../schemas';
+import { endOfMonth, startOfMonth, subMonths } from 'date-fns';
 // import { createWriteStream } from "fs";
 // import path from "path";
 import { db } from '@/lib/db';
 import { generateInviteCode } from '@/lib/utils';
-import { MemberRole } from '@prisma/client';
+import { MemberRole, TaskStatus } from '@prisma/client';
 import { getAuthUser } from '@/lib/getAuthUser';
 
 const app = new Hono()
@@ -256,6 +257,90 @@ const app = new Hono()
 
       return c.json({ data: workspace });
     }
-  );
+  )
+    .get('/:workspaceId/analytics', async (c) => {
+      const user = await getAuthUser(c);
+      if (!user) return c.json({ error: 'Unauthorized' }, 401);
+  
+      const { workspaceId } = c.req.param();
+  
+      const member = await db.member.findFirst({
+        where: {
+          workspaceId: workspaceId,
+          userId: user.id,
+        },
+      });
+  
+      if (!member) {
+        return c.json({ error: 'Unauthorized' }, 401);
+      }
+  
+      const now = new Date();
+      const thisMonthStart = startOfMonth(now);
+      const thisMonthEnd = endOfMonth(now);
+      const lastMonthStart = startOfMonth(subMonths(now, 1));
+      const lastMonthEnd = endOfMonth(subMonths(now, 1));
+  
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const countTasks = async (filter: any) =>
+        db.tasks.count({ where: { workspaceId, ...filter } });
+  
+      const taskCount = await countTasks({
+        createdAt: { gte: thisMonthStart, lte: thisMonthEnd },
+      });
+      const assignedTaskCount = await countTasks({
+        createdAt: { gte: thisMonthStart, lte: thisMonthEnd },
+        assigneeId: user.id,
+      });
+      const incompleteTaskCount = await countTasks({
+        createdAt: { gte: thisMonthStart, lte: thisMonthEnd },
+        status: { not: TaskStatus.DONE },
+      });
+      const completedTaskCount = await countTasks({
+        createdAt: { gte: thisMonthStart, lte: thisMonthEnd },
+        status: TaskStatus.DONE,
+      });
+      const overdueTaskCount = await countTasks({
+        createdAt: { gte: thisMonthStart, lte: thisMonthEnd },
+        status: { not: TaskStatus.DONE },
+        dueDate: { lt: now },
+      });
+  
+      const lastTaskCount = await countTasks({
+        createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
+      });
+      const lastAssignedTaskCount = await countTasks({
+        createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
+        assigneeId: user.id,
+      });
+      const lastIncompleteTaskCount = await countTasks({
+        createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
+        status: { not: TaskStatus.DONE },
+      });
+      const lastCompletedTaskCount = await countTasks({
+        createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
+        status: TaskStatus.DONE,
+      });
+      const lastOverdueTaskCount = await countTasks({
+        createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
+        status: { not: TaskStatus.DONE },
+        dueDate: { lt: now },
+      });
+  
+      return c.json({
+        data: {
+          taskCount,
+          taskDifference: taskCount - lastTaskCount,
+          assignedTaskCount,
+          assignedTaskDifference: assignedTaskCount - lastAssignedTaskCount,
+          completedTaskCount,
+          completedTaskDifference: completedTaskCount - lastCompletedTaskCount,
+          incompleteTaskCount,
+          incompleteTaskDifference: incompleteTaskCount - lastIncompleteTaskCount,
+          overdueTaskCount,
+          overdueTaskDifference: overdueTaskCount - lastOverdueTaskCount,
+        },
+      });
+    });
 
 export default app;
