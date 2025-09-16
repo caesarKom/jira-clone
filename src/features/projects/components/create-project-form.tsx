@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { createProjectsSchema, CreateProjectsType } from "../schemas";
+import { createProjectFormSchema, CreateProjectFormType } from "../schemas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DottedSeparator } from "@/components/dotted-separator";
 import {
@@ -34,15 +34,14 @@ export const CreateProjectForm = ({ onCancel }: CreateProjectFormProps) => {
   const { mutate, isPending } = useCreateProject();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const form = useForm<CreateProjectsType>({
-    resolver: zodResolver(createProjectsSchema.omit({ workspaceId: true })),
+  const form = useForm<CreateProjectFormType>({
+    resolver: zodResolver(createProjectFormSchema),
     defaultValues: {
       name: "",
-      image: "",
     },
   });
 
-  const onSubmit = (values: CreateProjectsType) => {
+  const onSubmit = (values: CreateProjectFormType) => {
     const finalValues = {
       ...values,
       workspaceId,

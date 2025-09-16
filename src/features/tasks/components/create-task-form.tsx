@@ -1,10 +1,14 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { createTaskSchema, CreateTaskType } from "../schemas";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DottedSeparator } from "@/components/dotted-separator";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import {
+  createTaskFormSchema,
+  CreateTaskFormType,
+  CreateTaskType,
+} from '../schemas';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DottedSeparator } from '@/components/dotted-separator';
 import {
   Form,
   FormControl,
@@ -12,17 +16,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
-import { useCreateTask } from "../api/use-create-task";
-import { DatePicker } from "@/components/date-picker";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MemberAvatar } from "@/features/members/components/member-avatar";
-import { TaskStatus } from "@prisma/client";
-import { ProjectAvatar } from "@/features/projects/components/project-avatar";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useWorkspaceId } from '@/features/workspaces/hooks/use-workspace-id';
+import { useCreateTask } from '../api/use-create-task';
+import { DatePicker } from '@/components/date-picker';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { MemberAvatar } from '@/features/members/components/member-avatar';
+import { TaskStatus } from '@prisma/client';
+import { ProjectAvatar } from '@/features/projects/components/project-avatar';
 
 interface CreateProjectFormProps {
   onCancel?: () => void;
@@ -39,20 +49,24 @@ export const CreateTaskForm = ({
 
   const { mutate, isPending } = useCreateTask();
 
-  const form = useForm<CreateTaskType>({
-    resolver: zodResolver(createTaskSchema.omit({ workspaceId: true })),
+  const form = useForm<CreateTaskFormType>({
+    resolver: zodResolver(createTaskFormSchema),
     defaultValues: {
-      workspaceId,
+      name: '',
     },
   });
 
-  const onSubmit = (values: CreateTaskType) => {
+  const onSubmit = (values: CreateTaskFormType) => {
+    const payload: CreateTaskType = {
+      ...values,
+      workspaceId,
+    };
     mutate(
-      { json: { ...values, workspaceId } },
+      { json: payload },
       {
         onSuccess: () => {
           form.reset();
-          onCancel?.()
+          onCancel?.();
         },
       }
     );
@@ -84,14 +98,20 @@ export const CreateTaskForm = ({
                 )}
               />
 
-               <FormField
+              <FormField
                 control={form.control}
                 name="dueDate"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Due Date</FormLabel>
                     <FormControl>
-                      <DatePicker {...field} />
+                      <DatePicker
+                        value={field.value ? new Date(field.value) : undefined} // string → Date
+                        onChange={
+                          (date) =>
+                            field.onChange(date ? date.toISOString() : '') // Date → string ISO
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -104,7 +124,10 @@ export const CreateTaskForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Assignee</FormLabel>
-                    <Select defaultValue={field.value} onValueChange={field.onChange}>
+                    <Select
+                      defaultValue={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select assignee" />
@@ -115,7 +138,10 @@ export const CreateTaskForm = ({
                         {memberOptions.map((member) => (
                           <SelectItem key={member.id} value={member.id}>
                             <div className="flex items-center gap-x-2">
-                              <MemberAvatar className="size-6" name={member.name} />
+                              <MemberAvatar
+                                className="size-6"
+                                name={member.name}
+                              />
                               {member.name}
                             </div>
                           </SelectItem>
@@ -132,7 +158,10 @@ export const CreateTaskForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select defaultValue={field.value} onValueChange={field.onChange}>
+                    <Select
+                      defaultValue={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select status" />
@@ -140,34 +169,33 @@ export const CreateTaskForm = ({
                       </FormControl>
                       <FormMessage />
                       <SelectContent>
-                       <SelectItem value={TaskStatus.BACKLOG}>
-                        Backlog
-                       </SelectItem>
-                       <SelectItem value={TaskStatus.IN_PROGRESS}>
-                        In progress
-                       </SelectItem>
-                       <SelectItem value={TaskStatus.IN_REVIEW}>
-                        In Review
-                       </SelectItem>
-                       <SelectItem value={TaskStatus.TODO}>
-                        Todo
-                       </SelectItem>
-                       <SelectItem value={TaskStatus.DONE}>
-                        Done
-                       </SelectItem>
+                        <SelectItem value={TaskStatus.BACKLOG}>
+                          Backlog
+                        </SelectItem>
+                        <SelectItem value={TaskStatus.IN_PROGRESS}>
+                          In progress
+                        </SelectItem>
+                        <SelectItem value={TaskStatus.IN_REVIEW}>
+                          In Review
+                        </SelectItem>
+                        <SelectItem value={TaskStatus.TODO}>Todo</SelectItem>
+                        <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
                 )}
               />
 
-               <FormField
+              <FormField
                 control={form.control}
                 name="projectId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project</FormLabel>
-                    <Select defaultValue={field.value} onValueChange={field.onChange}>
+                    <Select
+                      defaultValue={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select project" />
@@ -178,7 +206,11 @@ export const CreateTaskForm = ({
                         {projectOptions.map((project) => (
                           <SelectItem key={project.id} value={project.id}>
                             <div className="flex items-center gap-x-2">
-                              <ProjectAvatar className="size-6" name={project.name} image={project.imageUrl} />
+                              <ProjectAvatar
+                                className="size-6"
+                                name={project.name}
+                                image={project.imageUrl}
+                              />
                               {project.name}
                             </div>
                           </SelectItem>
@@ -188,7 +220,6 @@ export const CreateTaskForm = ({
                   </FormItem>
                 )}
               />
-
             </div>
             <DottedSeparator className="py-7" />
             <div className="flex items-center justify-between">
@@ -198,7 +229,7 @@ export const CreateTaskForm = ({
                 variant="secondary"
                 onClick={onCancel}
                 disabled={isPending}
-                className={cn(!onCancel && "invisible")}
+                className={cn(!onCancel && 'invisible')}
               >
                 Cancel
               </Button>

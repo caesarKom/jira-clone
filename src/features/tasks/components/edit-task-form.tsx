@@ -55,8 +55,6 @@ export const EditTaskForm = ({
       description: "",
       workspaceId: workspaceId,
       dueDate: initialValues.dueDate
-        ? new Date(initialValues.dueDate)
-        : undefined,
     },
   });
 
@@ -105,7 +103,13 @@ export const EditTaskForm = ({
                   <FormItem>
                     <FormLabel>Due Date</FormLabel>
                     <FormControl>
-                      <DatePicker {...field} />
+                       <DatePicker
+                        value={field.value ? new Date(field.value) : undefined} // string → Date
+                        onChange={
+                          (date) =>
+                            field.onChange(date ? date.toISOString() : '') // Date → string ISO
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

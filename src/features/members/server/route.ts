@@ -1,7 +1,6 @@
 import z from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { MemberRole } from "@prisma/client";
 import { getAuthUser } from "@/lib/getAuthUser";

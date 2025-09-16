@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/popover';
+import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
 
 interface DatePickerProps {
   value: Date | undefined;
@@ -22,7 +22,7 @@ export const DatePicker = ({
   value,
   onChange,
   className,
-  placeholder = "Select date",
+  placeholder = 'Select date',
 }: DatePickerProps) => {
   return (
     <Popover>
@@ -32,13 +32,13 @@ export const DatePicker = ({
           size="lg"
           type="button"
           className={cn(
-            "w-full justify-start text-left font-normal px-3",
-            !value && "text-muted-foreground",
+            'w-full justify-start text-left font-normal px-3',
+            !value && 'text-muted-foreground',
             className
           )}
         >
           <CalendarIcon className="size-4" />
-          {value ? format(value, "PPP") : <span>{placeholder}</span>}
+          {value ? format(value, 'PPP') : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">

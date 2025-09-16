@@ -17,6 +17,7 @@ import { useCallback } from 'react';
 import { TaskStatus } from '@prisma/client';
 import { useBulkUpdateTasks } from '../api/use-bulk-update-tasks';
 import { DataCalendar } from './data-calendar';
+import { useProjectId } from '@/features/projects/hooks/use-project-id';
 
 export const TaskViewSwitcher = ({
   hideProjectFilter,
@@ -33,11 +34,13 @@ export const TaskViewSwitcher = ({
   });
 
   const workspaceId = useWorkspaceId();
+  const paramProjectId = useProjectId();
+
   const { data: tasks, isLoading: isLoadingTask } = useGetTask({
     workspaceId,
     status,
     assigneeId,
-    projectId,
+    projectId: paramProjectId || projectId,
     dueDate,
   });
 
@@ -76,7 +79,7 @@ export const TaskViewSwitcher = ({
         <DottedSeparator className="my-4" />
 
         <DataFilters hideProjectFilter={hideProjectFilter} />
-        
+
         <DottedSeparator className="my-4" />
         {isLoadingTask ? (
           <div className="w-full border rounded-lg h-[200px] flex flex-col items-center justify-center">

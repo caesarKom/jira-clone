@@ -11,7 +11,10 @@ export const createProjectsSchema = z.object({
   workspaceId: z.string(),
 });
 
+export const createProjectFormSchema = createProjectsSchema.omit({ workspaceId: true });
+
 export type CreateProjectsType = z.infer<typeof createProjectsSchema>;
+export type CreateProjectFormType = z.infer<typeof createProjectFormSchema>;
 
 export const updateProjectsSchema = z.object({
   name: z.string().trim().min(1, "Must be 1 or more characters").optional(),

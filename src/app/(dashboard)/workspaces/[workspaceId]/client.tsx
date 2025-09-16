@@ -134,7 +134,7 @@ export const ProjectList = ({ data, total }: ProjectListProps) => {
           </Button>
         </div>
         <DottedSeparator className="my-4" />
-        <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.map((project) => (
             <li key={project.id}>
               <Link href={`/workspaces/${workspaceId}/projects/${project.id}`}>
