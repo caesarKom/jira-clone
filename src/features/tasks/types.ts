@@ -8,7 +8,7 @@ export type TaskT = {
   projectId: string;
   assigneeId: string;
   description: string | null;
-  dueDate: Date;
+  dueDate: string;
   position: number;
 };
 

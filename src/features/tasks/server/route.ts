@@ -157,6 +157,8 @@ export const app = new Hono()
 
     const { name, status, workspaceId, projectId, dueDate, assigneeId } =
       c.req.valid('json');
+    
+      console.log("API : ", dueDate)
 
     const member = await db.member.findFirst({
       where: {
@@ -195,7 +197,7 @@ export const app = new Hono()
         status,
         workspaceId,
         projectId,
-        dueDate,
+        dueDate: new Date(dueDate),
         assigneeId,
         position: newPosition,
       },
@@ -231,7 +233,7 @@ export const app = new Hono()
         name,
         status,
         projectId,
-        dueDate,
+        dueDate: new Date(dueDate),
         assigneeId,
         description,
       },
