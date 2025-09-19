@@ -11,9 +11,12 @@ import {
 import { DottedSeparator } from "@/components/dotted-separator";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const UserButton = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
@@ -64,8 +67,13 @@ export const UserButton = () => {
             await authClient.signOut({
               fetchOptions: {
                 onSuccess: () => {
+                  toast.success("Logged out")
+                  queryClient.invalidateQueries()
                   router.push("/sign-in");
                 },
+                onError: () => {
+                  toast.error("Failed to log out")
+                }
               },
             });
           }}

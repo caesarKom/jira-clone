@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth"; // Twój Better Auth serwerowy
+import { auth } from "@/lib/auth";
 import type { Context } from "hono";
 
 export async function getAuthUser(c: Context) {
